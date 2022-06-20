@@ -76,7 +76,7 @@ Example: '-' for unordered lists or '1.' for ordered lists."
   :group 'markdown-toc)
 
 (defcustom markdown-toc-header-toc-start
-  "<!-- markdown-toc start - Don't edit this section. Run M-x markdown-toc-refresh-toc -->"
+  "<!-- toc start -->"
   "Beginning delimiter comment."
   :group 'markdown-toc
   :type 'string)
@@ -88,7 +88,7 @@ Example: '-' for unordered lists or '1.' for ordered lists."
   :type 'string)
 
 (defcustom markdown-toc-header-toc-end
-  "<!-- markdown-toc end -->"
+  "<!-- toc end -->"
   "Ending delimiter comment."
   :group 'markdown-toc
   :type 'string)
@@ -238,7 +238,7 @@ Return the end position if it exists, nil otherwise."
              (concat s markdown-toc-header-toc-start "\n")
            s)
          (if markdown-toc-header-toc-title
-             (concat s markdown-toc-header-toc-title "\n")
+             (concat s markdown-toc-header-toc-title "\n\n")
            s)
          (concat s toc "\n")
          (if markdown-toc-header-toc-end
