@@ -20,11 +20,21 @@
 
 ;;; Commentary:
 
-;;
+;; Ert-runner evaluates this file before running tests.
 
 ;;; Code:
 
+(require 'projectile)
 (require 'undercover)
+
+
+(defun read-test-file (rel-path)
+  "Return the contents of the file at REL-PATH.
+REL-PATH is a path relative to the test/files directory in this
+project."
+  (f-read-text
+   (f-join (projectile-project-root) "test/files" rel-path)))
+
 (undercover "*.el"
             (:exclude "*-test.el")
             (:report-file "/tmp/undercover-report.json"))

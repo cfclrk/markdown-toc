@@ -12,4 +12,5 @@
  (depends-on "ert")
  (depends-on "el-mock")
  (depends-on "mocker")
- (depends-on "cl-lib"))
+ (depends-on "cl-lib")
+ (depends-on "projectile"))

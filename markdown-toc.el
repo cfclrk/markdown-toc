@@ -147,12 +147,6 @@ Default to identity function (do nothing)."
   "Given a IMENU-INDEX, compute the TOC structure."
   (--mapcat (markdown-toc--compute-toc-structure-from-level 0 it) imenu-index))
 
-(defun markdown-toc--symbol (sym n)
-  "Compute the repetition of a symbol SYM N times as a string."
-  (--> n
-       (-repeat it sym)
-       (s-join "" it)))
-
 (defconst markdown-toc--dash-protection-symbol "09876543214b825dc642cb6eb9a060e54bf8d69288fbee49041234567890"
   "Implementation detail to protect the - characters
   when converting to link.")
@@ -194,14 +188,15 @@ it to the TOC structure."
   "Given LEVEL-TITLE-TOC-LIST, a list of pair level, title, return a TOC string."
   (->> level-title-toc-list
        markdown--count-duplicate-titles
-       (--map (let ((nb-spaces (* markdown-toc-indentation-space (car it)))
-                    (title     (car (cdr it)))
-                    (count     (car (cdr (cdr it)))))
+       (--map (let ((num-spaces (* markdown-toc-indentation-space (car it)))
+                    (title      (car (cdr it)))
+                    (count      (car (cdr (cdr it)))))
                 (format "%s%s %s"
-                        (markdown-toc--symbol " " nb-spaces)
+                        (s-repeat num-spaces " ")
                         markdown-toc-list-item-marker
                         (markdown-toc--to-link title count))))
-       (s-join "\n")))
+       (s-join "\n")
+       (s-append "\n")))
 
 (defun markdown-toc--toc-already-present-p ()
   "Determine if a TOC has already been generated.
