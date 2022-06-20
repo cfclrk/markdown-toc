@@ -62,8 +62,6 @@
 (require 'dash)
 (require 'markdown-mode)
 
-(defconst markdown-toc--toc-version "0.1.5" "Current version installed.")
-
 (defgroup markdown-toc nil
   "A simple TOC generator for markdown file."
   :group 'markdown)
@@ -133,14 +131,6 @@ Default to identity function (do nothing)."
 (defun markdown-toc-log-msg (args)
   "Log message ARGS."
   (apply #'message (format "markdown-toc - %s" (car args)) (cdr args)))
-
-;;;###autoload
-(defun markdown-toc-version ()
-  "Markdown-toc version."
-  (interactive)
-  (message "markdown-toc version: %s" markdown-toc--toc-version))
-
-(defalias 'markdown-toc/version 'markdown-toc-version)
 
 (defun markdown-toc--compute-toc-structure-from-level (level menu-index)
   "Given a LEVEL and a MENU-INDEX, compute the toc structure."
@@ -336,32 +326,6 @@ or if not on a toc link, this does nothing.
           (search-forward-regexp (format "%s %s" (s-repeat level "#") title)))
       (message "markdown-toc: Not on a link (or misindented), nothing to do"))))
 
-(defun markdown-toc--bug-report ()
-  "Compute the bug report for the user to include."
-  (require 'find-func)
-  (->> `("Please:"
-         "- Describe your problem with clarity and conciceness (cf. https://www.gnu.org/software/emacs/manual/html_node/emacs/Understanding-Bug-Reporting.html)"
-         "- Explicit your installation choice (melpa, marmalade, el-get, tarball, git clone...)."
-         "- Report the following message trace inside your issue."
-         ""
-         "System information:"
-         ,(format "- system-type: %s" system-type)
-         ,(format "- locale-coding-system: %s" locale-coding-system)
-         ,(format "- emacs-version: %s" (emacs-version))
-         ,(format "- markdown-mode path: %s" (find-library-name "markdown-mode"))
-         ,(format "- markdown-toc version: %s" markdown-toc--toc-version)
-         ,(format "- markdown-toc path: %s" (find-library-name "markdown-toc")))
-       (s-join "\n")))
-
-(defun markdown-toc-bug-report (&optional open-url)
-  "Display a bug report message.
-When OPEN-URL is filled, with universal argument (`C-u') is used,
-opens new issue in markdown-toc's github tracker."
-  (interactive "P")
-  (when open-url
-    (browse-url "https://github.com/ardumont/markdown-toc/issues/new"))
-  (markdown-toc-log-msg (list (markdown-toc--bug-report))))
-
 (defvar markdown-toc-mode-map nil "Default Bindings map for markdown-toc mode.")
 
 (setq markdown-toc-mode-map
@@ -369,7 +333,6 @@ opens new issue in markdown-toc's github tracker."
         (define-key map (kbd "C-c m .") 'markdown-toc-follow-link-at-point)
         (define-key map (kbd "C-c m t") 'markdown-toc-generate-or-refresh-toc)
         (define-key map (kbd "C-c m d") 'markdown-toc-delete-toc)
-        (define-key map (kbd "C-c m v") 'markdown-toc-version)
         map))
 
 ;;;###autoload
