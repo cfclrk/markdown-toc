@@ -11,13 +11,20 @@
 (require 'markdown-toc)
 (require 'mocker)
 
+(ert-deftest markdown-toc-generate-basic ()
+  (should (equal
+           (read-test-file "basic-toc.md")
+           (with-test-file "basic.md"
+                           (markdown-toc-generate)))))
+
 (ert-deftest markdown-toc--to-link ()
-  (should (equal "[some markdown page~title (foo).](#some-markdown-pagetitle-foo-1)"
-                 (markdown-toc--to-link "some markdown page~title (foo)." 1)))
-  (should (equal "[some markdown page~title (foo).](#some-markdown-pagetitle-foo)"
-                 (markdown-toc--to-link "some markdown page~title (foo)." 0)))
-  (should (equal "[ under_score](#under_score)"
-                 (markdown-toc--to-link " under_score"))))
+  (should (equal
+           "[a/b Д~d (e).](#ab-дd-e-2)"
+           (markdown-toc--to-link "a/b Д~d (e)." 2)))
+
+  (should (equal
+           "[ under_score](#under_score)"
+           (markdown-toc--to-link " under_score"))))
 
 (ert-deftest markdown-toc--to-markdown-toc ()
   (let ((toc (markdown-toc--to-markdown-toc
@@ -36,39 +43,43 @@
                 (1 . "with")
                 (1 . "some")
                 (1 . "heading")))))
-    (should (equal (read-test-file "to-markdown-toc.md")
-                   toc))))
+    (should (equal
+             (read-test-file "to-markdown-toc.md")
+             toc))))
 
 (ert-deftest markdown-toc--compute-toc-structure-from-level ()
-  (should (equal '((0 . "Sources")
-                   (1 . "Marmalade (recommended)")
-                   (1 . "Melpa-stable"))
-                 (markdown-toc--compute-toc-structure-from-level
-                  0
-                  '("Sources"
-                    ("." . 130)
-                    ("Marmalade (recommended)" . 311)
-                    ("Melpa-stable" . 552)))))
+  (should (equal
+           '((0 . "Sources")
+             (1 . "Marmalade (recommended)")
+             (1 . "Melpa-stable"))
+           (markdown-toc--compute-toc-structure-from-level
+            0
+            '("Sources"
+              ("." . 130)
+              ("Marmalade (recommended)" . 311)
+              ("Melpa-stable" . 552)))))
 
-  (should (equal '((0 . "Install")
-                   (1 . "Load org-trello")
-                   (1 . "Alternative")
-                   (2 . "Git")
-                   (2 . "Tar"))
-                 (markdown-toc--compute-toc-structure-from-level
-                  0
-                  '("Install"
-                    ("." . 1184)
-                    ("Load org-trello" . 1277)
-                    ("Alternative"
-                     ("." . 1563)
-                     ("Git" . 1580)
-                     ("Tar" . 1881))))))
+  (should (equal
+           '((0 . "Install")
+             (1 . "Load org-trello")
+             (1 . "Alternative")
+             (2 . "Git")
+             (2 . "Tar"))
+           (markdown-toc--compute-toc-structure-from-level
+            0
+            '("Install"
+              ("." . 1184)
+              ("Load org-trello" . 1277)
+              ("Alternative"
+               ("." . 1563)
+               ("Git" . 1580)
+               ("Tar" . 1881))))))
 
-  (should (equal '((0 . "some markdown page title"))
-                 (markdown-toc--compute-toc-structure-from-level
-                  0
-                  '("some markdown page title" . 1)))))
+  (should (equal
+           '((0 . "some markdown page title"))
+           (markdown-toc--compute-toc-structure-from-level
+            0
+            '("some markdown page title" . 1)))))
 
 (ert-deftest markdown-toc--compute-toc-structure ()
   (should (equal
@@ -112,407 +123,123 @@
            (read-test-file "full-toc.md")
            (markdown-toc--compute-full-toc "some-toc"))))
 
-(defmacro markdown-toc-with-temp-buffer-and-return-buffer-content (text body-test)
-  "A `markdown-toc' test macro to ease testing.
-TEXT is the content of the buffer.
-BODY-TEST is the assertion to test on the buffer.
-NB-LINES-FORWARD is the number of lines to get back to."
-  `(with-temp-buffer
-     (markdown-mode)
-     (insert ,text)
-     (progn
-       (goto-char (point-min))
-       ,body-test
-       (buffer-substring-no-properties (point-min) (point-max)))))
-
-(ert-deftest markdown-toc-generate-toc--first-toc ()
-  (should (equal
-           (read-test-file "first-toc.md")
-           (markdown-toc-with-temp-buffer-and-return-buffer-content
-            (read-test-file "first.md")
-            (markdown-toc-generate-toc)))))
-
-(ert-deftest markdown-toc-generate-toc--with-duplicate-titles ()
+(ert-deftest markdown-toc-generate--with-duplicate-titles ()
   (should (equal
            (read-test-file "duplicate-title-toc.md")
            (markdown-toc-with-temp-buffer-and-return-buffer-content
             (read-test-file "duplicate-titles.md")
-            (markdown-toc-generate-toc)))))
+            (markdown-toc-generate)))))
 
-(ert-deftest markdown-toc-generate-toc--with-customs ()
+(ert-deftest markdown-toc-generate--with-customs ()
   (should (equal
            (read-test-file "customs.md")
-           (let ((markdown-toc-header-toc-start "<!-- markdown-toc start -->")
-                 (markdown-toc-header-toc-title "** foobar **")
-                 (markdown-toc-header-toc-end "<!-- toc end -->"))
+           (let ((markdown-toc-start "<!-- markdown-toc start -->")
+                 (markdown-toc-title "** foobar **")
+                 (markdown-toc-end "<!-- toc end -->"))
              (markdown-toc-with-temp-buffer-and-return-buffer-content
               (read-test-file "custom-toc.md")
-              (markdown-toc-generate-toc))))))
+              (markdown-toc-generate))))))
 
-(ert-deftest markdown-toc-generate-toc--first-toc-with-user-override ()
-  (should (equal (read-test-file "first-with-user-override-toc.md")
-                 (let ((markdown-toc-user-toc-structure-manipulation-fn 'cdr))
-                   (markdown-toc-with-temp-buffer-and-return-buffer-content
-                    (read-test-file "first-with-user-override.md")
-                    (markdown-toc-generate-toc))))))
+(ert-deftest markdown-toc-generate--first-toc-with-user-override ()
+  (should (equal
+           (read-test-file "first-with-user-override-toc.md")
+           (let ((markdown-toc-transform-fn 'cdr))
+             (markdown-toc-with-temp-buffer-and-return-buffer-content
+              (read-test-file "first-with-user-override.md")
+              (markdown-toc-generate))))))
 
-(ert-deftest markdown-toc-generate-toc--replace-old-toc-if-already-present ()
+(ert-deftest markdown-toc-generate--replace-old-toc-if-already-present ()
   (should (equal
            (read-test-file "replace-old-if-present-toc.md")
-                 (markdown-toc-with-temp-buffer-and-return-buffer-content
-                  (read-test-file "replace-old-if-present.md")
-                  (markdown-toc-generate-toc)))))
+           (markdown-toc-with-temp-buffer-and-return-buffer-content
+            (read-test-file "replace-old-if-present.md")
+            (markdown-toc-generate)))))
 
-(ert-deftest markdown-toc-generate-toc--replace-old-toc ()
+(ert-deftest markdown-toc-generate--replace-old-toc ()
   ;; Update an existing TOC
-  (should (equal "some foo bar before
+  (should (equal
+           (read-test-file "replace-old-toc.md")
+           (markdown-toc-with-temp-buffer-and-return-buffer-content
+            (read-test-file "replace-old.md")
+            (markdown-toc-generate 'replace-old-toc)))))
 
-<!-- toc start -->
-**Table of Contents**
-
-- [Packages](#packages)
-  - [Sources](#sources)
-    - [Marmalade (recommended)](#marmalade-recommended)
-    - [Melpa-stable](#melpa-stable)
-    - [Melpa (~snapshot)](#melpa-snapshot)
-  - [Install](#install)
-    - [Load org-trello](#load-org-trello)
-    - [Alternative](#alternative)
-      - [Git](#git)
-      - [Tar](#tar)
-
-<!-- toc end -->
-To install **org-trello** in your emacs, you need a few steps.
-# Packages
-## Sources
-If not already configured, you need to prepare emacs to work with marmalade or melpa.
-For this, you need to install a snippet of code in your emacs configuration file.
-### Marmalade (recommended)
-### Melpa-stable
-### Melpa (~snapshot)
-## Install
-### Load org-trello
-### Alternative
-#### Git
-#### Tar
-"
-                 (markdown-toc-with-temp-buffer-and-return-buffer-content
-                  "some foo bar before
-
-<!-- toc start -->
-**Table of Contents**
-
-  - [Melpa (~snapshot)](#melpa-snapshot)
-  - [Install](#install)
-    - [Load org-trello](#load-org-trello)
-    - [Alternative](#alternative)
-      - [Git](#git)
-      - [Tar](#tar)
-
-<!-- toc end -->
-To install **org-trello** in your emacs, you need a few steps.
-# Packages
-## Sources
-If not already configured, you need to prepare emacs to work with marmalade or melpa.
-For this, you need to install a snippet of code in your emacs configuration file.
-### Marmalade (recommended)
-### Melpa-stable
-### Melpa (~snapshot)
-## Install
-### Load org-trello
-### Alternative
-#### Git
-#### Tar
-"
-                  (markdown-toc-generate-toc 'replace-old-toc)))))
-
-(ert-deftest test-markdown-toc-generate-or-refresh-toc--with-existing-toc ()
+(ert-deftest test-markdown-toc-generate-or-refresh--with-existing-toc ()
   ;; Update an existing TOC
-  (should (equal "some foo bar before
+  (should (equal
+           (read-test-file "generate-or-refresh-with-existing-toc.md")
+           (markdown-toc-with-temp-buffer-and-return-buffer-content
+            (read-test-file "generate-or-refresh-with-existing.md")
+            (markdown-toc-generate-or-refresh)))))
 
-<!-- toc start -->
-**Table of Contents**
-
-- [Packages](#packages)
-  - [Sources](#sources)
-    - [Marmalade (recommended)](#marmalade-recommended)
-    - [Melpa-stable](#melpa-stable)
-    - [Melpa (~snapshot)](#melpa-snapshot)
-  - [Install](#install)
-    - [Load org-trello](#load-org-trello)
-    - [Alternative](#alternative)
-      - [Git](#git)
-      - [Tar](#tar)
-
-<!-- toc end -->
-To install **org-trello** in your emacs, you need a few steps.
-# Packages
-## Sources
-If not already configured, you need to prepare emacs to work with marmalade or melpa.
-For this, you need to install a snippet of code in your emacs configuration file.
-### Marmalade (recommended)
-### Melpa-stable
-### Melpa (~snapshot)
-## Install
-### Load org-trello
-### Alternative
-#### Git
-#### Tar
-"
-                 (markdown-toc-with-temp-buffer-and-return-buffer-content
-                  "some foo bar before
-
-<!-- toc start -->
-**Table of Contents**
-
-  - [Melpa (~snapshot)](#melpa-snapshot)
-  - [Install](#install)
-    - [Load org-trello](#load-org-trello)
-    - [Alternative](#alternative)
-      - [Git](#git)
-      - [Tar](#tar)
-
-<!-- toc end -->
-To install **org-trello** in your emacs, you need a few steps.
-# Packages
-## Sources
-If not already configured, you need to prepare emacs to work with marmalade or melpa.
-For this, you need to install a snippet of code in your emacs configuration file.
-### Marmalade (recommended)
-### Melpa-stable
-### Melpa (~snapshot)
-## Install
-### Load org-trello
-### Alternative
-#### Git
-#### Tar
-"
-                  (markdown-toc-generate-or-refresh-toc)))))
-
-(ert-deftest test-markdown-toc-generate-or-refresh-toc--without-existing-toc ()
-  (should (equal "<!-- toc start -->
-**Table of Contents**
-
-- [something](#something)
-  - [Sources](#sources)
-    - [Marmalade (recommended)](#marmalade-recommended)
-    - [Melpa-stable](#melpa-stable)
-    - [Melpa (~snapshot)](#melpa-snapshot)
-    - [[配置 SPF Sender Policy Framework 记录]](#配置-spf-sender-policy-framework-记录)
-  - [Install](#install)
-    - [Load org-trello](#load-org-trello)
-    - [Alternative](#alternative)
-      - [Git](#git)
-      - [Tar](#tar)
-
-<!-- toc end -->
-To install **org-trello** in your emacs, you need a few steps.
-# something
-## Sources
-If not already configured, you need to prepare emacs to work with marmalade or melpa.
-For this, you need to install a snippet of code in your emacs configuration file.
-### Marmalade (recommended)
-### Melpa-stable
-### Melpa (~snapshot)
-### [配置 SPF Sender Policy Framework 记录]
-## Install
-### Load org-trello
-### Alternative
-#### Git
-#### Tar
-"
-                 (markdown-toc-with-temp-buffer-and-return-buffer-content
-                  "To install **org-trello** in your emacs, you need a few steps.
-# something
-## Sources
-If not already configured, you need to prepare emacs to work with marmalade or melpa.
-For this, you need to install a snippet of code in your emacs configuration file.
-### Marmalade (recommended)
-### Melpa-stable
-### Melpa (~snapshot)
-### [配置 SPF Sender Policy Framework 记录]
-## Install
-### Load org-trello
-### Alternative
-#### Git
-#### Tar
-"
-                  (markdown-toc-generate-or-refresh-toc)))))
+(ert-deftest test-markdown-toc-generate-or-refresh--without-existing-toc ()
+  (should (equal
+           (read-test-file "generate-or-refresh-without-existing-toc.md")
+           (markdown-toc-with-temp-buffer-and-return-buffer-content
+            (read-test-file "generate-or-refresh-without-existing.md")
+            (markdown-toc-generate-or-refresh)))))
 
 (ert-deftest test-markdown-toc--refresh-toc--with-existing-toc ()
   ;; Update an existing TOC
-  (should (equal "some foo bar before
-
-<!-- toc start -->
-**Table of Contents**
-
-- [Packages](#packages)
-  - [Sources](#sources)
-    - [Marmalade (recommended)](#marmalade-recommended)
-    - [Melpa-stable](#melpa-stable)
-    - [Melpa (~snapshot)](#melpa-snapshot)
-  - [Install](#install)
-    - [Load org-trello](#load-org-trello)
-    - [Alternative](#alternative)
-      - [Git](#git)
-      - [Tar](#tar)
-
-<!-- toc end -->
-To install **org-trello** in your emacs, you need a few steps.
-# Packages
-## Sources
-If not already configured, you need to prepare emacs to work with marmalade or melpa.
-For this, you need to install a snippet of code in your emacs configuration file.
-### Marmalade (recommended)
-### Melpa-stable
-### Melpa (~snapshot)
-## Install
-### Load org-trello
-### Alternative
-#### Git
-#### Tar
-"
-                 (markdown-toc-with-temp-buffer-and-return-buffer-content
-                  "some foo bar before
-
-<!-- toc start -->
-**Table of Contents**
-
-  - [Melpa (~snapshot)](#melpa-snapshot)
-  - [Install](#install)
-    - [Load org-trello](#load-org-trello)
-    - [Alternative](#alternative)
-      - [Git](#git)
-      - [Tar](#tar)
-
-<!-- toc end -->
-To install **org-trello** in your emacs, you need a few steps.
-# Packages
-## Sources
-If not already configured, you need to prepare emacs to work with marmalade or melpa.
-For this, you need to install a snippet of code in your emacs configuration file.
-### Marmalade (recommended)
-### Melpa-stable
-### Melpa (~snapshot)
-## Install
-### Load org-trello
-### Alternative
-#### Git
-#### Tar
-"
-                  (markdown-toc-refresh-toc)))))
+  (should (equal
+           (read-test-file "refresh-with-existing-toc.md")
+           (markdown-toc-with-temp-buffer-and-return-buffer-content
+            (read-test-file "refresh-with-existing.md")
+            (markdown-toc-refresh-toc)))))
 
 (ert-deftest test-markdown-toc-refresh-toc--without-existing-toc ()
-  (should (equal "To install **org-trello** in your emacs, you need a few steps.
-# something
-## Sources
-If not already configured, you need to prepare emacs to work with marmalade or melpa.
-For this, you need to install a snippet of code in your emacs configuration file.
-### Marmalade (recommended)
-### Melpa-stable
-### Melpa (~snapshot)
-### [配置 SPF Sender Policy Framework 记录]
-## Install
-### Load org-trello
-### Alternative
-#### Git
-#### Tar
-"
-                 (markdown-toc-with-temp-buffer-and-return-buffer-content
-                  "To install **org-trello** in your emacs, you need a few steps.
-# something
-## Sources
-If not already configured, you need to prepare emacs to work with marmalade or melpa.
-For this, you need to install a snippet of code in your emacs configuration file.
-### Marmalade (recommended)
-### Melpa-stable
-### Melpa (~snapshot)
-### [配置 SPF Sender Policy Framework 记录]
-## Install
-### Load org-trello
-### Alternative
-#### Git
-#### Tar
-"
-                  (markdown-toc-refresh-toc)))))
+  ;; Refresh on a document without a ToC should yield the same document.
+  (should (equal
+           (read-test-file "refresh-without-existing-toc.md")
+           (markdown-toc-with-temp-buffer-and-return-buffer-content
+            (read-test-file "refresh-without-existing-toc.md")
+            (markdown-toc-refresh-toc)))))
 
 (ert-deftest test-markdown-toc-delete-toc ()
-  (should (equal "To install **org-trello** in your emacs, you need a few steps.
-# Packages
-## Sources
-If not already configured, you need to prepare emacs to work with marmalade or melpa.
-For this, you need to install a snippet of code in your emacs configuration file.
-### Marmalade (recommended)
-### Melpa-stable
-### Melpa (~snapshot)
-## Install
-### Load org-trello
-### Alternative
-#### Git
-#### Tar
-"
-                 (markdown-toc-with-temp-buffer-and-return-buffer-content
-                  "<!-- toc start -->
-**Table of Contents**
-
-  - [Melpa (~snapshot)](#melpa-snapshot)
-  - [Install](#install)
-    - [Load org-trello](#load-org-trello)
-    - [Alternative](#alternative)
-      - [Git](#git)
-      - [Tar](#tar)
-
-<!-- toc end -->
-To install **org-trello** in your emacs, you need a few steps.
-# Packages
-## Sources
-If not already configured, you need to prepare emacs to work with marmalade or melpa.
-For this, you need to install a snippet of code in your emacs configuration file.
-### Marmalade (recommended)
-### Melpa-stable
-### Melpa (~snapshot)
-## Install
-### Load org-trello
-### Alternative
-#### Git
-#### Tar
-"
-                  (markdown-toc-delete-toc)))))
-
-(ert-deftest test-markdown-toc-log-msg ()
-  (should (string= "markdown-toc - hello dude"
-                   (mocker-let ((message (str &rest args)
-                                         ((:input '("markdown-toc - hello %s" "dude") :output "markdown-toc - hello dude"))))
-                               (markdown-toc-log-msg '("hello %s" "dude"))))))
+  (should (equal
+           (read-test-file "first.md")
+           (markdown-toc-with-temp-buffer-and-return-buffer-content
+            (read-test-file "first-toc.md")
+            (markdown-toc-delete-toc)))))
 
 (ert-deftest markdown-toc--read-title-out-of-link ()
-  (should (string= "this is the title"
-                   (markdown-toc--read-title-out-of-link "  - [this is the title](#this-is-the-link)   ")))
-  (should (string= "another title"
-                   (markdown-toc--read-title-out-of-link "  - [another title](#this-is-the-link)
+  (should (string=
+           "this is the title"
+           (markdown-toc--read-title-out-of-link
+            "  - [this is the title](#this-is-the-link)   ")))
+
+  (should (string=
+           "another title"
+           (markdown-toc--read-title-out-of-link
+            "  - [another title](#this-is-the-link)
 with multiple line
 should not matter "))))
 
 (ert-deftest markdown-toc--title-level ()
   (should (eq 1
-              (markdown-toc--title-level "- [this is the title](#this-is-the-link)")))
+              (markdown-toc--title-level
+               "- [this is the title](#this-is-the-link)")))
+
   (should (eq 4
-              (let ((markdown-toc-indentation-space 4))
-                (markdown-toc--title-level "            - [this is the title](#this-is-the-link)"))))
+              (let ((markdown-toc-indent 4))
+                (markdown-toc--title-level
+                 "            - [this is the title](#this-is-the-link)"))))
+
   (should (eq 2
-              (let ((markdown-toc-indentation-space 2))
-                (markdown-toc--title-level "  - [another title](#this-is-the-link)
+              (let ((markdown-toc-indent 2))
+                (markdown-toc--title-level
+                 "  - [another title](#this-is-the-link)
 with multiple line
 should not matter "))))
+
   (should (eq 2
-              (let ((markdown-toc-indentation-space 3))
+              (let ((markdown-toc-indent 3))
                 (markdown-toc--title-level "   - [another title](#this-is-the-link)
 with multiple line
 should not matter "))))
   ;; no - as prefix so considered not a title
   (should-not (markdown-toc--title-level "[this is the title](#this-is-the-link)"))
   ;; prefixed with a dash but misaligned, title should be indented with a
-  ;; multiple of `markdown-toc-indentation-space` blank spaces
+  ;; multiple of `markdown-toc-indent` blank spaces
   (should-not (markdown-toc--title-level " - [title](#this-is-the-link)")))
 
 (ert-deftest markdown-toc-follow-link-at-point()

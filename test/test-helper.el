@@ -1,22 +1,4 @@
-;;; test-helper.el ---                               -*- lexical-binding: t; -*-
-
-;; Copyright (C) 2015  Antoine Romain Dumont
-
-;; Author: Antoine Romain Dumont <antoine.romain.dumont@gmail.com>
-;; Keywords:
-
-;; This program is free software; you can redistribute it and/or modify
-;; it under the terms of the GNU General Public License as published by
-;; the Free Software Foundation, either version 3 of the License, or
-;; (at your option) any later version.
-
-;; This program is distributed in the hope that it will be useful,
-;; but WITHOUT ANY WARRANTY; without even the implied warranty of
-;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-;; GNU General Public License for more details.
-
-;; You should have received a copy of the GNU General Public License
-;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
+;;; test-helper.el --- Tests for markdown-toc.el -*- lexical-binding: t; -*-
 
 ;;; Commentary:
 
@@ -28,12 +10,35 @@
 (require 'undercover)
 
 
-(defun read-test-file (rel-path)
-  "Return the contents of the file at REL-PATH.
-REL-PATH is a path relative to the test/files directory in this
-project."
+(defun read-test-file (path)
+  "Return the contents of the file at PATH.
+If PATH is relative, it is considered relative to the test/files
+directory in this project."
   (f-read-text
-   (f-join (projectile-project-root) "test/files" rel-path)))
+   (f-join (projectile-project-root) "test/files" path)))
+
+(defmacro with-test-file (rel-path &rest forms)
+  "Read file at REL-PATH and execute FORMS."
+  (declare (indent 1))
+  `(with-temp-buffer
+     (markdown-mode)
+     (insert (read-test-file ,rel-path))
+     (goto-char (point-min))
+     ,@forms
+     (buffer-string)))
+
+(defmacro markdown-toc-with-temp-buffer-and-return-buffer-content (text body-test)
+  "A `markdown-toc' test macro to ease testing.
+TEXT is the content of the buffer.
+BODY-TEST is the assertion to test on the buffer.
+NB-LINES-FORWARD is the number of lines to get back to."
+  `(with-temp-buffer
+     (markdown-mode)
+     (insert ,text)
+     (progn
+       (goto-char (point-min))
+       ,body-test
+       (buffer-substring-no-properties (point-min) (point-max)))))
 
 (undercover "*.el"
             (:exclude "*-test.el")

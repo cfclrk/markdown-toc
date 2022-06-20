@@ -1,0 +1,35 @@
+name: Build and test
+on:
+  push:
+    branches: ["*"]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - uses: purcell/setup-emacs@master
+        with:
+          version: 28.1
+
+      - uses: actions/cache@v3
+        id: cache-cask-packages
+        with:
+          path: .cask
+          key: cache-cask-packages-000
+
+      - uses: actions/cache@v3
+        id: cache-cask-executable
+        with:
+          path: ~/.cask
+          key: cache-cask-executable-000
+
+      - uses: cask/setup-cask@master
+        if: steps.cache-cask-executable.outputs.cache-hit != 'true'
+        with:
+          version: snapshot
+
+      - run: echo "$HOME/.cask/bin" >> $GITHUB_PATH
+
+      - run: cask exec ert-runner
