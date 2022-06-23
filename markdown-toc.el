@@ -6,13 +6,13 @@
 
 ;;; Commentary:
 
-;; Generate a Table of Contents in a markdown file.
+;; An Emacs mode for creating a table of contents in markdown files.
 ;;
-;; This package provides the following interactive functions:
-
-;; - markdown-toc-generate: Generate a TOC at and insert it at
-;;   point.
-;; - markdown-toc-refresh-toc: Update existing TOC.
+;; This package provides three interactive functions:
+;;
+;; - `markdown-toc-generate' Create a toc at point
+;; - `markdown-toc-refresh' Find and update an existing toc
+;; - `markdown-toc-delete' Find and delete an existing toc
 
 ;;; Code:
 
@@ -35,15 +35,15 @@ Example: '-' for unordered lists or '1.' for ordered lists."
           (string :tag "Ordered list header" "1."))
   :group 'markdown-toc)
 
-(defcustom markdown-toc-start
-  "<!-- toc start -->"
-  "Beginning delimiter comment."
+(defcustom markdown-toc-title
+  "**Table of Contents**"
+  "Title for a table of contents."
   :group 'markdown-toc
   :type 'string)
 
-(defcustom markdown-toc-title
-  "# Table of Contents"
-  "Title for a table of contents."
+(defcustom markdown-toc-start
+  "<!-- toc start -->"
+  "Beginning delimiter comment."
   :group 'markdown-toc
   :type 'string)
 
@@ -78,12 +78,42 @@ the heading text.
 
 To e.g. remove the first heading (often the title) from the toc:
 
-  (custom-set-variables
-    '(markdown-toc-transform-fn 'cdr))
+  (setq markdown-toc-transform-fn 'cdr)
 
 The default is the identity function (no transformation)."
   :group 'markdown-toc
   :type 'function)
+
+;;;; interactive functions
+
+;;;###autoload
+(defun markdown-toc-generate ()
+  "Generate a TOC at point."
+  (interactive "P")
+  (save-excursion
+    (->> (funcall imenu-create-index-function)
+         markdown-toc--compute-toc-structure
+         (funcall markdown-toc-transform-fn)
+         markdown-toc--generate-toc
+         insert)))
+
+;;;###autoload
+(defun markdown-toc-refresh ()
+  "Refresh an existing TOC."
+  (interactive)
+  (when (markdown-toc--toc-already-present-p)
+    (markdown-toc-generate)))
+
+;;;###autoload
+(defun markdown-toc-delete ()
+  "Deletes a previously generated TOC."
+  (interactive)
+  (save-excursion
+    (let ((region-start (markdown-toc--start-pos))
+          (region-end   (markdown-toc--end-pos)))
+      (delete-region region-start (1+ region-end)))))
+
+;;;; toc structure
 
 (defun markdown-toc--compute-toc-structure-from-level (level menu-index)
   "Given a LEVEL and a MENU-INDEX, compute the toc structure."
@@ -179,14 +209,14 @@ Return the end position if it exists, nil otherwise."
     (goto-char (point-min))
     (re-search-forward markdown-toc-start nil t)))
 
-(defun markdown-toc--toc-start ()
-  "Compute the toc's starting point."
+(defun markdown-toc--start-pos ()
+  "Find a toc and return the start position."
   (save-excursion
     (goto-char (markdown-toc--toc-already-present-p))
     (point-at-bol)))
 
-(defun markdown-toc--toc-end ()
-  "Compute the toc's end point."
+(defun markdown-toc--end-pos ()
+  "Find a toc and return the end position."
   (save-excursion
     (goto-char (point-min))
     (re-search-forward markdown-toc-end nil t)))
@@ -197,16 +227,8 @@ Return the end position if it exists, nil otherwise."
       markdown-toc--to-markdown-toc
       markdown-toc--compute-full-toc))
 
-(defun markdown-toc--delete-toc (&optional replace-toc-p)
-  "Delets a TOC."
-  (let ((region-start (markdown-toc--toc-start))
-        (region-end   (markdown-toc--toc-end)))
-    (delete-region region-start (1+ region-end))
-    (when replace-toc-p
-      (goto-char region-start))))
-
 (defun markdown-toc--compute-full-toc (toc)
-  "Given the TOC's content, compute the full toc with comments and title."
+  "Add a title, start comment, and end comment to TOC."
   (-as-> "" s
          (if markdown-toc-start
              (concat s markdown-toc-start "\n")
@@ -218,42 +240,6 @@ Return the end position if it exists, nil otherwise."
          (if markdown-toc-end
              (concat s markdown-toc-end "\n")
            s)))
-
-;;;###autoload
-(defun markdown-toc-generate (&optional replace-toc-p)
-  "Generate a TOC at point.
-Deletes any previous TOC. If called interactively with prefix arg
-REPLACE-TOC-P, replaces previous TOC."
-  (interactive "P")
-  (save-excursion
-    (when (markdown-toc--toc-already-present-p)
-      ;; when toc already present, remove it
-      (markdown-toc--delete-toc t))
-    (->> (funcall imenu-create-index-function)
-         markdown-toc--compute-toc-structure
-         (funcall markdown-toc-transform-fn)
-         markdown-toc--generate-toc
-         insert)))
-
-;;;###autoload
-(defun markdown-toc-generate-or-refresh ()
-  "Generate a TOC at point or refreshes an already generated TOC."
-  (interactive)
-  (markdown-toc-generate t))
-
-;;;###autoload
-(defun markdown-toc-refresh-toc ()
-  "Refresh an existing TOC."
-  (interactive)
-  (when (markdown-toc--toc-already-present-p)
-    (markdown-toc-generate t)))
-
-;;;###autoload
-(defun markdown-toc-delete-toc ()
-  "Deletes a previously generated TOC."
-  (interactive)
-  (save-excursion
-    (markdown-toc--delete-toc t)))
 
 (defun markdown-toc--title-level (link)
   "Determine the markdown title LINK out of its indentation.
@@ -290,9 +276,12 @@ or if not on a toc link, this does nothing."
 (setq markdown-toc-mode-map
       (let ((map (make-sparse-keymap)))
         (define-key map (kbd "C-c m .") 'markdown-toc-follow-link-at-point)
-        (define-key map (kbd "C-c m t") 'markdown-toc-generate-or-refresh)
-        (define-key map (kbd "C-c m d") 'markdown-toc-delete-toc)
+        (define-key map (kbd "C-c m g") 'markdown-toc-generate)
+        (define-key map (kbd "C-c m r") 'markdown-toc-refresh)
+        (define-key map (kbd "C-c m d") 'markdown-toc-delete)
         map))
+
+;;;; minor mode
 
 ;;;###autoload
 (define-minor-mode markdown-toc-mode

@@ -1,41 +1,24 @@
 # markdown-toc
 
-Create and update a Table of Contents in markdown files.
+An Emacs mode for creating a table of contents in markdown files.
 
 <!--ts-->
-- [markdown-toc](#markdown-toc)
-- [Use](#use)
-  - [Create](#create)
-  - [User toc manipulation](#user-toc-manipulation)
-  - [Update](#update)
-  - [Create elsewhere](#create-elsewhere)
-  - [Remove](#remove)
-  - [Customize](#customize)
+- [Usage](#usage)
+  - [Change the toc structure](#change-the-toc-structure)
+  - [Configuration](#configuration)
   - [Minor mode](#minor-mode)
-- [Install](#install)
-  - [emacs package repository](#emacs-package-repository)
-    - [Setup](#setup)
-      - [melpa stable](#melpa-stable)
-      - [melpa](#melpa)
-    - [Install](#install-1)
-  - [emacs-lisp file](#emacs-lisp-file)
-- [Inspiration](#inspiration)
+- [Development](#development)
 <!--te-->
 
 # Usage
 
-## Create a ToC
+This package provides three interactive functions:
 
-Inside a markdown file, the first time, place yourself where you want to insert the TOC:
+- `markdown-toc-generate`: Create a toc at point
+- `markdown-toc-refresh`: Find and update an existing toc
+- `markdown-toc-delete`: Find and delete an existing toc
 
-<kbd>M-x markdown-toc-generate</kbd>
-
-This will compute the TOC and insert it at current position.
-
-You can also execute: <kbd>M-x markdown-toc-generate-or-refresh</kbd> to either
-gnerate a TOC when none exists or refresh the currently existing one.
-
-## Structure manipulation
+## Change the toc structure
 
 You can transform the structure of the ToC using `markdown-toc-transform-fn`. It defaults to the identity function (no transformation).
 
@@ -45,27 +28,24 @@ the toc. The remaining code expects a similar structure.
 Example:
 
 ```emacs-lisp
-'((0 . "some markdown page title")
-  (0 . "main title")
-  (1 . "Sources")
-  (2 . "Marmalade (recommended)")
-  (2 . "Melpa-stable")
-  (2 . "Melpa (~snapshot)")
-  (1 . "Install")
-  (2 . "Load org-trello")
-  (2 . "Alternative")
-  (3 . "Git")
-  (3 . "Tar")
-  (0 . "another title")
-  (1 . "with")
-  (1 . "some")
-  (1 . "heading"))
+'((0 . "H1 Document Title")
+  (0 . "Another H1 heading")
+  (1 . "H2 heading")
+  (2 . "H3 heading")
+  (1 . "H2 heading")
+  (0 . "H1 heading")
+  (1 . "H2 heading"))
 ```
 
-So for example, as asked in #16, one could drop the first element:
+The car of each item is a heading level; the cdr of each item is the heading
+text.
+
+The first element is often a document title. To drop the title from the table of
+contents, set `markdown-toc-transform-fn` to a function that removes the first
+element from a list:
 
 ```emacs-lisp
-(custom-set-variables '(markdown-toc-transform-fn 'cdr))
+(setq markdown-toc-transform-fn 'cdr)
 ```
 
 Or drop all h1 titles:
@@ -82,52 +62,30 @@ Or drop all h1 titles:
       toc-structure)))
 ```
 
-## Update
+## Configuration
 
-To update an existing TOC:
-
-<kbd>M-x markdown-toc-refresh-toc</kbd>
-
-## Create elsewhere
-
-To create another updated TOC elsewhere, execute <kbd>M-x
-markdown-toc-generate</kbd> again, this will remove the old TOC and insert the
-updated one from where you stand.
-
-## Remove
-
-To remove a TOC, execute <kbd>M-x markdown-toc-delete-toc</kbd>.
-
-## Customize
-
-Currently, you can customize the following:
-
-- `markdown-toc-start`
-- `markdown-toc-title`
-- `markdown-toc-end`
-- `markdown-toc-indent`
-
-Customize them as following format:
+The following variables can be customized:
 
 ```emacs-lisp
-(custom-set-variables
- '(markdown-toc-start "<!-- customized start-->")
- '(markdown-toc-title "**customized title**")
- '(markdown-toc-end "<!-- customized end -->")
- '(markdown-toc-indent 4))
+(setq
+ markdown-toc-start "<!-- toc start -->"
+ markdown-toc-end "<!-- toc end -->"
+ markdown-toc-title "**Table of Contents**"
+ markdown-toc-indent 2
+ markdown-toc-transform-fn (lambda
+                             (level-to-heading-list)
+                             level-to-heading-list))
 ```
 
 ## Minor mode
 
-markdown-toc-mode provides a minor mode with the following default binding:
+`markdown-toc-mode` is a minor mode with the following default key bindings:
 
 ```emacs-lisp
 (setq markdown-toc-mode-map
       (let ((map (make-sparse-keymap)))
         (define-key map (kbd "C-c m .") 'markdown-toc-follow-link-at-point)
-        (define-key map (kbd "C-c m t") 'markdown-toc-generate-or-refresh)
-        (define-key map (kbd "C-c m d") 'markdown-toc-delete-toc)
-        (define-key map (kbd "C-c m v") 'markdown-toc-version)
+        (define-key map (kbd "C-c m d") 'markdown-toc-delete)
         map))
 ```
 

@@ -163,43 +163,28 @@
             (read-test-file "replace-old.md")
             (markdown-toc-generate 'replace-old-toc)))))
 
-(ert-deftest test-markdown-toc-generate-or-refresh--with-existing-toc ()
-  ;; Update an existing TOC
-  (should (equal
-           (read-test-file "generate-or-refresh-with-existing-toc.md")
-           (markdown-toc-with-temp-buffer-and-return-buffer-content
-            (read-test-file "generate-or-refresh-with-existing.md")
-            (markdown-toc-generate-or-refresh)))))
-
-(ert-deftest test-markdown-toc-generate-or-refresh--without-existing-toc ()
-  (should (equal
-           (read-test-file "generate-or-refresh-without-existing-toc.md")
-           (markdown-toc-with-temp-buffer-and-return-buffer-content
-            (read-test-file "generate-or-refresh-without-existing.md")
-            (markdown-toc-generate-or-refresh)))))
-
 (ert-deftest test-markdown-toc--refresh-toc--with-existing-toc ()
   ;; Update an existing TOC
   (should (equal
            (read-test-file "refresh-with-existing-toc.md")
            (markdown-toc-with-temp-buffer-and-return-buffer-content
             (read-test-file "refresh-with-existing.md")
-            (markdown-toc-refresh-toc)))))
+            (markdown-toc-refresh)))))
 
-(ert-deftest test-markdown-toc-refresh-toc--without-existing-toc ()
+(ert-deftest test-markdown-toc-refresh--without-existing-toc ()
   ;; Refresh on a document without a ToC should yield the same document.
   (should (equal
            (read-test-file "refresh-without-existing-toc.md")
            (markdown-toc-with-temp-buffer-and-return-buffer-content
             (read-test-file "refresh-without-existing-toc.md")
-            (markdown-toc-refresh-toc)))))
+            (markdown-toc-refresh)))))
 
-(ert-deftest test-markdown-toc-delete-toc ()
+(ert-deftest test-markdown-toc-delete ()
   (should (equal
            (read-test-file "first.md")
            (markdown-toc-with-temp-buffer-and-return-buffer-content
             (read-test-file "first-toc.md")
-            (markdown-toc-delete-toc)))))
+            (markdown-toc-delete)))))
 
 (ert-deftest markdown-toc--read-title-out-of-link ()
   (should (string=
