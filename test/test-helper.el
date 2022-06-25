@@ -9,13 +9,15 @@
 (require 'projectile)
 (require 'undercover)
 
+(defun proj-file (path)
+  (f-join (projectile-project-root) path))
 
 (defun read-test-file (path)
   "Return the contents of the file at PATH.
 If PATH is relative, it is considered relative to the test/files
 directory in this project."
   (f-read-text
-   (f-join (projectile-project-root) "test/files" path)))
+   (proj-file (f-join "test/files" path))))
 
 (defmacro with-test-file (rel-path &rest forms)
   "Read file at REL-PATH and execute FORMS."

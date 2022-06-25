@@ -14,13 +14,14 @@ An Emacs mode for creating a table of contents in markdown files.
 
 This package provides three interactive functions:
 
-- `markdown-toc-generate`: Create a toc at point
-- `markdown-toc-refresh`: Find and update an existing toc
-- `markdown-toc-delete`: Find and delete an existing toc
+- `markdown-toc-generate` Create a toc at point
+- `markdown-toc-refresh` Find and update an existing toc
+- `markdown-toc-follow-link-at-point` Jump to a section from the toc
 
 ## Change the toc structure
 
-You can transform the structure of the ToC using `markdown-toc-transform-fn`. It defaults to the identity function (no transformation).
+You can transform the structure of the ToC using `markdown-toc-transform-fn`. It
+defaults to the identity function (no transformation).
 
 It expects as argument the toc-structure markdown-toc uses to generate
 the toc. The remaining code expects a similar structure.

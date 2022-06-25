@@ -3,16 +3,17 @@
 
 ;; Author: Antoine R. Dumont (@ardumont)
 ;; Package-Requires: ((markdown-mode) (dash) (s))
+;; Version: 0
 
 ;;; Commentary:
 
 ;; An Emacs mode for creating a table of contents in markdown files.
 ;;
-;; This package provides three interactive functions:
+;; This package provides four interactive functions:
 ;;
 ;; - `markdown-toc-generate' Create a toc at point
 ;; - `markdown-toc-refresh' Find and update an existing toc
-;; - `markdown-toc-delete' Find and delete an existing toc
+;; - `markdown-toc-follow-link-at-point' Jump to a section from the toc
 
 ;;; Code:
 
@@ -26,7 +27,7 @@
   "A simple TOC generator for markdown file."
   :group 'markdown)
 
-(defcustom markdown-toc-list-item-marker
+(defcustom markdown-toc-list-item
   "-"
   "List item marker that should be used.
 Example: '-' for unordered lists or '1.' for ordered lists."
@@ -89,7 +90,7 @@ The default is the identity function (no transformation)."
 ;;;###autoload
 (defun markdown-toc-generate ()
   "Generate a TOC at point."
-  (interactive "P")
+  (interactive)
   (save-excursion
     (->> (funcall imenu-create-index-function)
          markdown-toc--compute-toc-structure
@@ -101,17 +102,33 @@ The default is the identity function (no transformation)."
 (defun markdown-toc-refresh ()
   "Refresh an existing TOC."
   (interactive)
-  (when (markdown-toc--toc-already-present-p)
-    (markdown-toc-generate)))
+  (save-excursion
+    (when (markdown-toc--present?)
+      (markdown-toc-delete)))
+  (markdown-toc-generate))
+
+(defun markdown-toc-delete ()
+  "Find a TOC and delete it.
+Return the starting position of the old TOC. Not for interactive
+use. This function moves point."
+  (let ((region-start (markdown-toc--start-pos))
+        (region-end   (markdown-toc--end-pos)))
+    (delete-region region-start (1+ region-end))
+    (goto-char region-start)))
 
 ;;;###autoload
-(defun markdown-toc-delete ()
-  "Deletes a previously generated TOC."
+(defun markdown-toc-follow-link-at-point ()
+  "On a given toc link, navigate to the current markdown header.
+If the toc is misindented (according to markdown-toc-indent`)
+or if not on a toc link, this does nothing."
   (interactive)
-  (save-excursion
-    (let ((region-start (markdown-toc--start-pos))
-          (region-end   (markdown-toc--end-pos)))
-      (delete-region region-start (1+ region-end)))))
+  (let* ((full-title (buffer-substring-no-properties (point-at-bol) (point-at-eol)))
+         (level (markdown-toc--title-level full-title)))
+    (if level ;; nil if misindented or not on a title
+        (let ((title (markdown-toc--read-title-out-of-link full-title)))
+          (goto-char (point-min))
+          (search-forward-regexp (format "%s %s" (s-repeat level "#") title)))
+      (message "markdown-toc: Not on a link (or misindented), nothing to do"))))
 
 ;;;; toc structure
 
@@ -197,12 +214,12 @@ it to the TOC structure."
                     (count      (car (cdr (cdr it)))))
                 (format "%s%s %s"
                         (s-repeat num-spaces " ")
-                        markdown-toc-list-item-marker
+                        markdown-toc-list-item
                         (markdown-toc--to-link title count))))
        (s-join "\n")
        (s-append "\n")))
 
-(defun markdown-toc--toc-already-present-p ()
+(defun markdown-toc--present? ()
   "Determine if a TOC has already been generated.
 Return the end position if it exists, nil otherwise."
   (save-excursion
@@ -212,7 +229,7 @@ Return the end position if it exists, nil otherwise."
 (defun markdown-toc--start-pos ()
   "Find a toc and return the start position."
   (save-excursion
-    (goto-char (markdown-toc--toc-already-present-p))
+    (goto-char (markdown-toc--present?))
     (point-at-bol)))
 
 (defun markdown-toc--end-pos ()
@@ -254,20 +271,6 @@ and returns nil. Otherwise, returns the level number."
                        length)))
       (when (zerop (% indent markdown-toc-indent))
         (+ 1 (/ indent markdown-toc-indent))))))
-
-;;;###autoload
-(defun markdown-toc-follow-link-at-point ()
-  "On a given toc link, navigate to the current markdown header.
-If the toc is misindented (according to markdown-toc-indent`)
-or if not on a toc link, this does nothing."
-  (interactive)
-  (let* ((full-title (buffer-substring-no-properties (point-at-bol) (point-at-eol)))
-         (level (markdown-toc--title-level full-title)))
-    (if level ;; nil if misindented or not on a title
-        (let ((title (markdown-toc--read-title-out-of-link full-title)))
-          (goto-char (point-min))
-          (search-forward-regexp (format "%s %s" (s-repeat level "#") title)))
-      (message "markdown-toc: Not on a link (or misindented), nothing to do"))))
 
 (defvar markdown-toc-mode-map
   nil

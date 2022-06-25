@@ -1,10 +1,16 @@
-<!-- markdown-toc start -->
-** foobar **
+  - [b](#b)
+    - [c](#c)
+    - [d](#d)
+  - [e](#e)
+    - [f](#f)
+# a
 
-- [something](#something)
-  - [Sources](#sources)
+## b
 
-<!-- toc end -->
-blahblah.
-# something
-## Sources
+### c
+
+### d
+
+## e
+
+### f

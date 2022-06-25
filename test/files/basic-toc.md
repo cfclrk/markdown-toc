@@ -1,5 +1,5 @@
 <!-- toc start -->
-# Table of Contents
+**Table of Contents**
 
 - [a](#a)
   - [b](#b)
