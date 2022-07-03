@@ -7,7 +7,6 @@
 ;;; Code:
 
 (require 'projectile)
-(require 'undercover)
 
 (defun proj-file (path)
   (f-join (projectile-project-root) path))
@@ -42,9 +41,23 @@ NB-LINES-FORWARD is the number of lines to get back to."
        ,body-test
        (buffer-substring-no-properties (point-min) (point-max)))))
 
-(undercover "*.el"
-            (:exclude "*-test.el")
-            (:report-file "/tmp/undercover-report.json"))
+(defun generate-test-files ()
+  "Regenerate test files."
+
+  ;; Set everything to their defaults
+  (let ((markdown-toc-title "**Table of Contents**")
+        (markdown-toc-start "<!-- toc start -->")
+        (markdown-toc-end "<!-- toc end -->")
+        (markdown-toc-indent 2)
+        (markdown-toc-transform-fn (lambda (level-to-heading-list) level-to-heading-list)))
+
+    (dolist (test-name '("basic" "duplicate-titles"))
+      (let ((start-file (concat test-name ".md"))
+            (end-file   (concat test-name "-toc.md")))
+        (f-write
+         (with-test-file start-file (markdown-toc-generate))
+         'utf-8
+         (proj-file (f-join "test/files" end-file)))))))
 
 (require 'markdown-toc)
 

@@ -13,40 +13,28 @@
 
 ;; To re-generate an output file, add this form before the assertion:
 ;;
-;;    (f-write
-;;     actual
-;;     'utf-8
-;;     (proj-file (f-join "test/files/duplicate-titles-toc.md")))
-
-;;;; test variables
-
-(setq
- markdown-toc-title "**Table of Contents**"
- markdown-toc-start "<!-- toc start -->"
- markdown-toc-end "<!-- toc end -->"
- markdown-toc-indent 2
- markdown-toc-transform-fn (lambda (s) s))
+(f-write
+ actual
+ 'utf-8
+ (proj-file (f-join "test/files/duplicate-titles-toc.md")))
 
 ;;;; markdown-toc-generate
 
 (ert-deftest markdown-toc-generate--basic ()
+  "Test generating a toc using default values."
   (let ((expected (read-test-file "basic-toc.md"))
-        (actual (with-test-file "basic.md"
-                  (markdown-toc-generate))))
-    (should (equal expected actual))))
-
-(ert-deftest markdown-toc-generate--duplicate-titles ()
-  (let ((expected (read-test-file "duplicate-titles-toc.md"))
-        (actual (with-test-file "duplicate-titles.md"
-                  (markdown-toc-generate))))
-    ;; (f-write
-    ;;  actual
-    ;;  'utf-8
-    ;;  (proj-file (f-join "test/files/duplicate-titles-toc.md")))
+        (actual (let ((markdown-toc-title "**Table of Contents**")
+                      (markdown-toc-start "<!-- toc start -->")
+                      (markdown-toc-end "<!-- toc end -->")
+                      (markdown-toc-indent 2)
+                      (markdown-toc-transform-fn (lambda (s) s)))
+                  (with-test-file "basic.md"
+                    (markdown-toc-generate)))))
 
     (should (equal expected actual))))
 
-(ert-deftest markdown-toc-generate--with-customs ()
+(ert-deftest markdown-toc-generate--customs ()
+  "Test generating a toc using custom values."
   (let ((expected (read-test-file "customs-toc.md"))
         (actual (let ((markdown-toc-start nil)
                       (markdown-toc-title nil)
@@ -55,37 +43,64 @@
                       (markdown-toc-transform-fn 'cdr))
                   (with-test-file "basic.md"
                     (markdown-toc-generate)))))
+
     (should (equal expected actual))))
 
 ;;;; markdown-toc-refresh
 
 (ert-deftest markdown-toc-refresh--with-existing ()
-  ;; Update an existing toc
-  (let ((expected (read-test-file "basic-toc.md"))
-        (actual (with-test-file "basic-toc-out-of-date.md"
-                  (markdown-toc-refresh))))
-    (should (equal expected actual))))
+  "Test refreshing an existing toc."
+  (let ((markdown-toc-title "**Table of Contents**")
+        (markdown-toc-start "<!-- toc start -->")
+        (markdown-toc-end "<!-- toc end -->")
+        (markdown-toc-indent 2)
+        (markdown-toc-transform-fn (lambda (s) s)))
 
-(ert-deftest test-markdown-toc-refresh--without-existing-toc ()
-  ;; Refresh on a document without a ToC should yield the same document.
-  (should (equal
-           (read-test-file "refresh-without-existing-toc.md")
-           (markdown-toc-with-temp-buffer-and-return-buffer-content
-            (read-test-file "refresh-without-existing-toc.md")
-            (markdown-toc-refresh)))))
+    ;; When point is at the beginning of the file
+    (let ((expected (read-test-file "basic-toc.md"))
+          (actual (with-test-file "basic-toc-out-of-date.md"
+                    (markdown-toc-refresh))))
+      (should (equal expected actual)))
+
+    ;; When point is in the middle of the file
+    (let ((expected (read-test-file "basic-toc.md"))
+          (actual (with-test-file "basic-toc-out-of-date.md"
+                    (goto-char 100)
+                    (markdown-toc-refresh))))
+      (should (equal expected actual)))))
+
+(ert-deftest markdown-toc-refresh--without-existing ()
+  "Test refreshing a non-existing toc.
+This should behave just like `markdown-toc-generate'."
+  (let ((expected (read-test-file "basic-toc.md"))
+        (actual (let ((markdown-toc-title "**Table of Contents**")
+                      (markdown-toc-start "<!-- toc start -->")
+                      (markdown-toc-end "<!-- toc end -->")
+                      (markdown-toc-indent 2)
+                      (markdown-toc-transform-fn (lambda (s) s)))
+                  (with-test-file "basic.md"
+                    (markdown-toc-refresh)))))
+
+    (should (equal expected actual))))
 
 ;;;; markdown-toc-delete
 
-(ert-deftest test-markdown-toc-delete ()
-  (should (equal
-           (read-test-file "first.md")
-           (markdown-toc-with-temp-buffer-and-return-buffer-content
-            (read-test-file "first-toc.md")
-            (markdown-toc-delete)))))
+(ert-deftest markdown-toc-delete ()
+  "Test deleting a toc."
+  (let ((expected (read-test-file "basic.md"))
+        (actual (let ((markdown-toc-title "**Table of Contents**")
+                      (markdown-toc-start "<!-- toc start -->")
+                      (markdown-toc-end "<!-- toc end -->")
+                      (markdown-toc-indent 2)
+                      (markdown-toc-transform-fn (lambda (s) s)))
+                  (with-test-file "basic-toc.md"
+                    (markdown-toc-delete)))))
 
-;;;; markdown-toc-follow-link-at-point
+    (should (equal expected actual))))
 
 ;;;; links
+
+;;;; markdown-toc-follow-link-at-point
 
 (ert-deftest markdown-toc--read-title-out-of-link ()
   (should (string=

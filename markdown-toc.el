@@ -104,8 +104,8 @@ The default is the identity function (no transformation)."
   (interactive)
   (save-excursion
     (when (markdown-toc--present?)
-      (markdown-toc-delete)))
-  (markdown-toc-generate))
+      (markdown-toc-delete))
+    (markdown-toc-generate)))
 
 (defun markdown-toc-delete ()
   "Find a TOC and delete it.
