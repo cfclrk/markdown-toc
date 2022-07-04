@@ -13,10 +13,10 @@
 
 ;; To re-generate an output file, add this form before the assertion:
 ;;
-(f-write
- actual
- 'utf-8
- (proj-file (f-join "test/files/duplicate-titles-toc.md")))
+;; (f-write
+;;  actual
+;;  'utf-8
+;;  (proj-file (f-join "test/files/duplicate-titles-toc.md")))
 
 ;;;; markdown-toc-generate
 

@@ -7,7 +7,7 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - uses: purcell/setup-emacs@master
         with:
@@ -30,6 +30,10 @@ jobs:
         with:
           version: snapshot
 
-      - run: echo "$HOME/.cask/bin" >> $GITHUB_PATH
+      - run: cask install
 
       - run: cask exec ert-runner
+
+      - uses: leotaku/elisp-check@master
+        with:
+          file: markdown-toc.el
