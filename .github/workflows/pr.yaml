@@ -34,11 +34,14 @@ jobs:
           echo "$PATH"
           echo "$GITHUB_PATH"
           ls -alh ~/.cask/
+          pwd
+          ls -alhF
 
-      - run: echo "$HOME/.cask/bin" >> $GITHUB_PATH
+      - run: PATH="$HOME/.cask/bin:$PATH"
 
       - run: |
-          echo "$GITHUB_PATH"
+          echo $PATH
+          echo $GITHUB_PATH
           $HOME/.cask/bin/cask --version
 
       # - uses: leotaku/elisp-check@master
@@ -49,5 +52,7 @@ jobs:
       #   with:
       #     check: ert
       #     file: markdown-toc/tests/markdown-toc-tests.el
+
+      - run: cask install
 
       - run: cask exec ert-runner
