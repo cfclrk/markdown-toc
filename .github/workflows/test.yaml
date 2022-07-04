@@ -13,6 +13,10 @@ jobs:
         with:
           version: 28.1
 
+      - uses: leotaku/elisp-check@master
+        with:
+          file: markdown-toc.el
+
       - uses: actions/cache@v3
         id: cache-cask-packages
         with:
@@ -33,7 +37,3 @@ jobs:
       - run: cask install
 
       - run: cask exec ert-runner
-
-      - uses: leotaku/elisp-check@master
-        with:
-          file: markdown-toc.el

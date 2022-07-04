@@ -30,7 +30,6 @@
                       (markdown-toc-transform-fn (lambda (s) s)))
                   (with-test-file "basic.md"
                     (markdown-toc-generate)))))
-
     (should (equal expected actual))))
 
 (ert-deftest markdown-toc-generate--customs ()
@@ -43,7 +42,6 @@
                       (markdown-toc-transform-fn 'cdr))
                   (with-test-file "basic.md"
                     (markdown-toc-generate)))))
-
     (should (equal expected actual))))
 
 ;;;; markdown-toc-refresh
@@ -80,7 +78,6 @@ This should behave just like `markdown-toc-generate'."
                       (markdown-toc-transform-fn (lambda (s) s)))
                   (with-test-file "basic.md"
                     (markdown-toc-refresh)))))
-
     (should (equal expected actual))))
 
 ;;;; markdown-toc-delete
@@ -95,22 +92,31 @@ This should behave just like `markdown-toc-generate'."
                       (markdown-toc-transform-fn (lambda (s) s)))
                   (with-test-file "basic-toc.md"
                     (markdown-toc-delete)))))
+    (should (equal expected actual))))
 
+;;;; add-header-title-footer
+
+(ert-deftest markdown-toc--add-header-title-footer ()
+  (let ((expected (read-test-file "header-title-footer.md"))
+        (actual (let ((markdown-toc-title "**Table of Contents**")
+                      (markdown-toc-start "<!-- toc start -->")
+                      (markdown-toc-end "<!-- toc end -->")
+                      (markdown-toc-indent 2)
+                      (markdown-toc-transform-fn (lambda (s) s)))
+                  (markdown-toc--add-header-title-footer "foo\n"))))
     (should (equal expected actual))))
 
 ;;;; links
 
-;;;; markdown-toc-follow-link-at-point
-
-(ert-deftest markdown-toc--read-title-out-of-link ()
+(ert-deftest markdown-toc--link-title ()
   (should (string=
            "this is the title"
-           (markdown-toc--read-title-out-of-link
+           (markdown-toc--link-title
             "  - [this is the title](#this-is-the-link)   ")))
 
   (should (string=
            "another title"
-           (markdown-toc--read-title-out-of-link
+           (markdown-toc--link-title
             "  - [another title](#this-is-the-link)
 with multiple line
 should not matter "))))
@@ -300,11 +306,6 @@ not a title
                ("with" . 2061)
                ("some" . 2070)
                ("heading" . 2079)))))))
-
-(ert-deftest markdown-toc--compute-full-toc ()
-  (should (equal
-           (read-test-file "full-toc.md")
-           (markdown-toc--compute-full-toc "some-toc"))))
 
 (provide 'markdown-toc-tests)
 ;;; markdown-toc-test.el ends here

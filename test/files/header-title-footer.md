@@ -1,5 +1,5 @@
 <!-- toc start -->
 **Table of Contents**
 
-some-toc
+foo
 <!-- toc end -->

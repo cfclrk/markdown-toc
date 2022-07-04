@@ -116,20 +116,6 @@ use. This function moves point."
     (delete-region region-start (1+ region-end))
     (goto-char region-start)))
 
-;;;###autoload
-(defun markdown-toc-follow-link-at-point ()
-  "On a given toc link, navigate to the current markdown header.
-If the toc is misindented (according to markdown-toc-indent`)
-or if not on a toc link, this does nothing."
-  (interactive)
-  (let* ((full-title (buffer-substring-no-properties (point-at-bol) (point-at-eol)))
-         (level (markdown-toc--title-level full-title)))
-    (if level ;; nil if misindented or not on a title
-        (let ((title (markdown-toc--read-title-out-of-link full-title)))
-          (goto-char (point-min))
-          (search-forward-regexp (format "%s %s" (s-repeat level "#") title)))
-      (message "markdown-toc: Not on a link (or misindented), nothing to do"))))
-
 ;;;; toc structure
 
 (defun markdown-toc--compute-toc-structure-from-level (level menu-index)
@@ -149,6 +135,24 @@ or if not on a toc link, this does nothing."
    (markdown-toc--compute-toc-structure-from-level 0 it)
    imenu-index))
 
+;;;; wrap
+
+(defun markdown-toc--add-header-title-footer (toc)
+  "Wrap the given string TOC with a title and start/end comments.
+While the start/end comments are optional, note that without
+them, this package cannot find the toc in a document."
+  (-as-> "" str
+         (if markdown-toc-start
+             (concat str markdown-toc-start "\n")
+           str)
+         (if markdown-toc-title
+             (concat str markdown-toc-title "\n\n")
+           str)
+         (concat str toc)
+         (if markdown-toc-end
+             (concat str markdown-toc-end "\n")
+           str)))
+
 ;;;; links
 
 (defconst
@@ -160,6 +164,20 @@ or if not on a toc link, this does nothing."
   markdown-toc--underscore-protection-symbol
   "1e2be169e3fa4c689bb01c486dafb1a2"
   "Random string to protect _ characters.")
+
+;;;###autoload
+(defun markdown-toc-follow-link-at-point ()
+  "On a given toc link, navigate to the current markdown header.
+If the toc is misindented (according to markdown-toc-indent`)
+or if not on a toc link, this does nothing."
+  (interactive)
+  (let* ((full-title (buffer-substring-no-properties (point-at-bol) (point-at-eol)))
+         (level (markdown-toc--title-level full-title)))
+    (if level ;; nil if misindented or not on a title
+        (let ((title (markdown-toc--link-title full-title)))
+          (goto-char (point-min))
+          (search-forward-regexp (format "%s %s" (s-repeat level "#") title)))
+      (message "markdown-toc: Not on a link (or misindented), nothing to do"))))
 
 (defun markdown-toc--to-link (title &optional count)
   "Return a markdown link formatted from string TITLE.
@@ -183,15 +201,13 @@ If COUNT is provided, append it to the link part. Example:
                 (concat "-" (number-to-string count))
               ""))))
 
-(defun markdown-toc--read-title-out-of-link (link)
-  "Extract the link title out of a markdown LINK title.
-This assumes no funky stuff in the markdown link format ` - [<title>](...) `  "
+(defun markdown-toc--link-title (link)
+  "Extract the title from the given markdown LINK."
   (->> link
        s-trim
        (s-chop-prefix "- [")
        (s-split "]")
        car))
-
 
 (defun markdown-toc-count-duplicate-titles (toc-structure)
   "Counts the number of times each title appeared in the toc structure and adds
@@ -219,9 +235,11 @@ it to the TOC structure."
        (s-join "\n")
        (s-append "\n")))
 
+;;;; helpers
+
 (defun markdown-toc--present? ()
-  "Determine if a TOC has already been generated.
-Return the end position if it exists, nil otherwise."
+  "Determine if a toc is present in the current buffer.
+Reutrns the toc's end position if it exists, nil otherwise."
   (save-excursion
     (goto-char (point-min))
     (re-search-forward markdown-toc-start nil t)))
@@ -242,21 +260,7 @@ Return the end position if it exists, nil otherwise."
   "Given a TOC-STRUCTURE, compute a new toc."
   (-> toc-structure
       markdown-toc--to-markdown-toc
-      markdown-toc--compute-full-toc))
-
-(defun markdown-toc--compute-full-toc (toc)
-  "Add a title, start comment, and end comment to TOC."
-  (-as-> "" s
-         (if markdown-toc-start
-             (concat s markdown-toc-start "\n")
-           s)
-         (if markdown-toc-title
-             (concat s markdown-toc-title "\n\n")
-           s)
-         (concat s toc)
-         (if markdown-toc-end
-             (concat s markdown-toc-end "\n")
-           s)))
+      markdown-toc--add-header-title-footer))
 
 (defun markdown-toc--title-level (link)
   "Determine the markdown title LINK out of its indentation.
