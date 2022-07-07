@@ -2,21 +2,25 @@
 
 An Emacs mode for creating a table of contents in markdown files.
 
-<!--ts-->
+<!-- toc start -->
+**Table of Contents**
+
 - [Usage](#usage)
   - [Change the toc structure](#change-the-toc-structure)
   - [Configuration](#configuration)
   - [Minor mode](#minor-mode)
 - [Development](#development)
-<!--te-->
+<!-- toc end -->
 
 # Usage
 
 This package provides three interactive functions:
 
-- `markdown-toc-generate` Create a toc at point
-- `markdown-toc-refresh` Find and update an existing toc
-- `markdown-toc-follow-link-at-point` Jump to a section from the toc
+| Function                   | Binding            | Description                     |
+|----------------------------|--------------------|---------------------------------|
+| `markdown-toc-generate`    | <kbd>C-c m g</kbd> | Create a toc at point           |
+| `markdown-toc-refresh`     | <kbd>C-c m r</kbd> | Find and update an existing toc |
+| `markdown-toc-follow-link` | <kbd>C-c m .</kbd> | Jump to a section from the toc  |
 
 ## Change the toc structure
 
@@ -65,7 +69,8 @@ Or drop all h1 titles:
 
 ## Configuration
 
-The following variables can be customized:
+The following variables can be customized. They are shown here with their
+defaults.
 
 ```emacs-lisp
 (setq
@@ -73,9 +78,7 @@ The following variables can be customized:
  markdown-toc-end "<!-- toc end -->"
  markdown-toc-title "**Table of Contents**"
  markdown-toc-indent 2
- markdown-toc-transform-fn (lambda
-                             (level-to-heading-list)
-                             level-to-heading-list))
+ markdown-toc-transform-fn (lambda (x) x))
 ```
 
 ## Minor mode
@@ -85,7 +88,7 @@ The following variables can be customized:
 ```emacs-lisp
 (setq markdown-toc-mode-map
       (let ((map (make-sparse-keymap)))
-        (define-key map (kbd "C-c m .") 'markdown-toc-follow-link-at-point)
+        (define-key map (kbd "C-c m .") 'markdown-toc-follow-link)
         (define-key map (kbd "C-c m d") 'markdown-toc-delete)
         map))
 ```

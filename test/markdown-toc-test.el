@@ -149,7 +149,7 @@ should not matter "))))
   ;; multiple of `markdown-toc-indent` blank spaces
   (should-not (markdown-toc--title-level " - [title](#this-is-the-link)")))
 
-(ert-deftest markdown-toc-follow-link-at-point()
+(ert-deftest markdown-toc-follow-link()
   "Follow a correct toc link should follow to the title"
   (should (string= "## Sources"
                    (with-temp-buffer
@@ -164,10 +164,10 @@ should not matter "))))
 ...
 ")
                      (search-backward "- [Sources]")
-                     (call-interactively 'markdown-toc-follow-link-at-point)
+                     (call-interactively 'markdown-toc-follow-link)
                      (buffer-substring-no-properties (point-at-bol) (point-at-eol))))))
 
-(ert-deftest markdown-toc-follow-link-at-point-failures()
+(ert-deftest markdown-toc-follow-link-failures()
   "Follow a misindented toc link should do nothing"
   (should
    ;; not move
@@ -182,7 +182,7 @@ should not matter "))))
 ...
 ")
               (search-backward "- [Sources]")
-              (call-interactively 'markdown-toc-follow-link-at-point)
+              (call-interactively 'markdown-toc-follow-link)
               (buffer-substring-no-properties (point-at-bol) (point-at-eol)))))
 
   (should
@@ -201,7 +201,7 @@ not a title
 ...
 ")
               (search-backward "not a title")
-              (call-interactively 'markdown-toc-follow-link-at-point)
+              (call-interactively 'markdown-toc-follow-link)
               (buffer-substring-no-properties (point-at-bol) (point-at-eol))))))
 
 (ert-deftest markdown-toc--to-link ()

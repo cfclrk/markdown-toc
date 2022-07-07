@@ -1,7 +1,5 @@
-;;; markdown-toc.el --- A simple TOC generator for markdown files
-;; Copyright (C) 2014-2020 Antoine R. Dumont (@ardumont)
+;;; markdown-toc.el --- A TOC generator for markdown -*- lexical-binding: t;
 
-;; Author: Antoine R. Dumont (@ardumont)
 ;; Package-Requires: ((markdown-mode) (dash) (s))
 ;; Version: 0
 
@@ -13,7 +11,7 @@
 ;;
 ;; - `markdown-toc-generate' Create a toc at point
 ;; - `markdown-toc-refresh' Find and update an existing toc
-;; - `markdown-toc-follow-link-at-point' Jump to a section from the toc
+;; - `markdown-toc-follow-link' Jump to a section from the toc
 
 ;;; Code:
 
@@ -21,7 +19,7 @@
 (require 'dash)
 (require 'markdown-mode)
 
-;;;; variables
+;;;; Variables
 
 (defgroup markdown-toc nil
   "A simple TOC generator for markdown file."
@@ -85,7 +83,7 @@ The default is the identity function (no transformation)."
   :group 'markdown-toc
   :type 'function)
 
-;;;; interactive functions
+;;;; Generate and refresh
 
 ;;;###autoload
 (defun markdown-toc-generate ()
@@ -107,16 +105,7 @@ The default is the identity function (no transformation)."
       (markdown-toc-delete))
     (markdown-toc-generate)))
 
-(defun markdown-toc-delete ()
-  "Find a TOC and delete it.
-Return the starting position of the old TOC. Not for interactive
-use. This function moves point."
-  (let ((region-start (markdown-toc--start-pos))
-        (region-end   (markdown-toc--end-pos)))
-    (delete-region region-start (1+ region-end))
-    (goto-char region-start)))
-
-;;;; toc structure
+;;;; Create toc structure using imenu
 
 (defun markdown-toc--compute-toc-structure-from-level (level menu-index)
   "Given a LEVEL and a MENU-INDEX, compute the toc structure."
@@ -135,7 +124,7 @@ use. This function moves point."
    (markdown-toc--compute-toc-structure-from-level 0 it)
    imenu-index))
 
-;;;; wrap
+;;;; Wrap
 
 (defun markdown-toc--add-header-title-footer (toc)
   "Wrap the given string TOC with a title and start/end comments.
@@ -153,7 +142,15 @@ them, this package cannot find the toc in a document."
              (concat str markdown-toc-end "\n")
            str)))
 
-;;;; links
+;;;; Filters
+
+(defun markdown-toc-remove-first-heading (x) x)
+
+(defun markdown-toc-remove-toc-heading (x) x)
+
+(defun markdown-toc-remove-headings-before-point (x) x)
+
+;;;; Links
 
 (defconst
   markdown-toc--dash-protection-symbol
@@ -166,7 +163,7 @@ them, this package cannot find the toc in a document."
   "Random string to protect _ characters.")
 
 ;;;###autoload
-(defun markdown-toc-follow-link-at-point ()
+(defun markdown-toc-follow-link ()
   "On a given toc link, navigate to the current markdown header.
 If the toc is misindented (according to markdown-toc-indent`)
 or if not on a toc link, this does nothing."
@@ -237,6 +234,15 @@ it to the TOC structure."
 
 ;;;; helpers
 
+(defun markdown-toc-delete ()
+  "Find a TOC and delete it.
+Return the starting position of the old TOC. Not for interactive
+use. This function moves point."
+  (let ((region-start (markdown-toc--start-pos))
+        (region-end   (markdown-toc--end-pos)))
+    (delete-region region-start (1+ region-end))
+    (goto-char region-start)))
+
 (defun markdown-toc--present? ()
   "Determine if a toc is present in the current buffer.
 Reutrns the toc's end position if it exists, nil otherwise."
@@ -282,10 +288,9 @@ and returns nil. Otherwise, returns the level number."
 
 (setq markdown-toc-mode-map
       (let ((map (make-sparse-keymap)))
-        (define-key map (kbd "C-c m .") 'markdown-toc-follow-link-at-point)
+        (define-key map (kbd "C-c m .") 'markdown-toc-follow-link)
         (define-key map (kbd "C-c m g") 'markdown-toc-generate)
         (define-key map (kbd "C-c m r") 'markdown-toc-refresh)
-        (define-key map (kbd "C-c m d") 'markdown-toc-delete)
         map))
 
 ;;;; minor mode
